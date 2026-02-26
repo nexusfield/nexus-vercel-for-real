@@ -1,0 +1,40 @@
+---
+description: Nexus project context - architecture, env, model routing, UI patterns
+alwaysApply: true
+---
+
+# Nexus Project Context
+
+## Overview
+
+Nexus is a personal intelligence system (Next.js 14) with chat, knowledge base, and multi-model AI support.
+
+## Environment Variables
+
+- **`lib/getEnv.js`**: Reads `.env.local` directly from disk. Use `getEnv("KEY")` instead of `process.env.KEY` for API keys—Next.js sometimes fails to load env for API routes.
+- **Required keys**: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` (for Gemini models), `OPENAI_API_KEY`.
+- **next.config.js**: Uses `loadEnvConfig()` and `env: { GEMINI_API_KEY }` as fallback.
+
+## Model Selector & Chat Routing
+
+- **Models**: Claude (Haiku, Sonnet, Opus), Gemini (2.0 Flash, 2.0 Pro). Default: claude-sonnet-4-6.
+- **Persistence**: Selected model stored in `localStorage` key `nexus-selected-model`.
+- **API**: `POST /api/chat` accepts `{ userMessage, conversationHistory, model }`. Routes to Anthropic or Gemini based on `model.startsWith("gemini-")`.
+- **chatAgent.js**: Accepts `model` and `geminiApiKey`. Uses `@google/genai` for Gemini, `@anthropic-ai/sdk` for Claude. Returns unified async iterable of text chunks.
+
+## Chat Flow
+
+1. `runNavigationAgent` → embeddings + sqlite-vec search
+2. `runReasoningAgent` → context package
+3. `runChatAgent` → streams text from selected model
+
+## UI Patterns
+
+- **Delete conversation**: Custom modal (`deleteConfirmConversation` state). Cancel / Delete buttons. Overlay click closes.
+- **Delete knowledge**: Browser `confirm()`. Calls `DELETE /api/knowledge/{id}`. Actually deletes from DB.
+- **Error handling**: 429/rate limit → friendly "Gemini API rate limit exceeded..." message.
+
+## Database
+
+- **nexus.db**: SQLite with `knowledge` and `conversations` tables. sqlite-vec for embeddings in `knowledge.embedding` (BLOB).
+- **Knowledge delete**: `DELETE FROM knowledge WHERE id = ?` in `app/api/knowledge/[id]/route.js`.
