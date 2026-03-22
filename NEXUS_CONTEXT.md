@@ -10,13 +10,43 @@
 2. **Run:** `npm run dev` — app at http://localhost:3000. Unauthenticated users are redirected to `/login`; sign in with Google to access the app.
 3. **Dump:** Go to Knowledge tab, paste text in Dump Bar → stored in Supabase Postgres (`knowledge` table) with pgvector embeddings
 4. **Chat:** Ask questions → Navigation → Chat Agent streams response
-5. **DB:** Supabase/Postgres via `lib/supabase.js` client and `lib/db.js` adapter. Apply `supabase/migrations/001_init.sql` and `supabase/migrations/002_add_folders.sql` before using app features.
+5. **DB:** Supabase/Postgres via `lib/supabase.js` client and `lib/db.js` adapter. Apply all migrations in `supabase/migrations/` in order (`001`–`005`) before using app features (production has all five applied; see **Deployment**).
 6. **Knowledge storage:** All dumped content lives in Supabase (`knowledge` table). Raw text in `knowledge.raw_text`, embeddings in `knowledge.embedding` (`vector(768)`).
 7. **Remember in chat:** Chat does NOT add to knowledge. Saying "remember X" in chat stores it only in that conversation's messages, not in the knowledge table. Use the Dump Bar (Knowledge tab) to add knowledge.
 8. **Modes:** Create modes in the Modes tab (name, optional trigger phrase, instruction). Activate a mode to prepend its instruction to the system prompt for that chat session. Active mode resets when switching conversations or refreshing.
 9. **Mobile:** Sidebar is collapsible (hamburger to open, overlay/✕ to close). Dump bar and chat input are touch-friendly (48px min height). Main content uses full width when sidebar is closed.
 10. **Folders:** Chats tab sidebar supports folders for organizing threads. Create folders, expand/collapse, rename/delete via "..." menu. Right-click or "..." on any thread to move it to a folder. Deleting a folder ungroups its threads (no threads deleted).
 11. **Journal (local-only):** Journal tab is isolated from chat/knowledge/agents. Data is stored in IndexedDB only via `lib/journalDb.js` (no Supabase, no API calls). Supports nested notes/folders, markdown editing with syntax highlighting, autosave (~400ms), search, context-menu CRUD, and drag/drop moves (note->folder, folder->folder).
+
+---
+
+## Deployment
+
+**Production (Vercel)**
+
+- **Live app:** https://nexus-vercel-for-real.vercel.app
+- **Source repository:** https://github.com/nexusfield/nexus-vercel-for-real
+
+**Supabase**
+
+- All **five** migrations have been applied to the production database **in order:** `001_init.sql`, `002_add_folders.sql`, `003_knowledge_folders.sql`, `004_knowledge_folders_rls.sql`, `005_user_profile.sql`.
+
+**Vercel environment variables**
+
+Set in the Vercel project (Production): `AUTH_SECRET`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_URL`.
+
+**NEXTAUTH_URL**
+
+- Explicitly set to **https://nexus-vercel-for-real.vercel.app** so NextAuth does **not** use each deployment’s dynamic host (e.g. preview `*.vercel.app` URLs) as the OAuth callback base. That mismatch against Google’s registered redirect URIs caused **`redirect_uri_mismatch`** during testing; pinning **`NEXTAUTH_URL`** to the canonical production URL is the fix.
+
+**Google OAuth (Google Cloud Console)**
+
+- **Authorized redirect URI (production):** https://nexus-vercel-for-real.vercel.app/api/auth/callback/google
+- **OAuth consent screen:** **Testing** mode; test user **Lboykin2005@gmail.com** is added so that account can sign in while the app is not in production publishing status.
+
+**Operational gotcha**
+
+- **Vercel preview deployments** get **unique URLs** per deployment. Google OAuth only accepts **pre-registered** redirect URIs. If NextAuth derives the site URL from the **current** Vercel host (e.g. `VERCEL_URL` on a preview), Google returns **`redirect_uri_mismatch`**. **Mitigation:** set **`NEXTAUTH_URL`** to the **stable production URL** above; register **localhost** and **production** callback URIs separately for local vs prod (see §14).
 
 ---
 
@@ -789,11 +819,11 @@ You are NEXUS, a personal intelligence system. Use retrieved chunks as candidate
 
 20. **Mobile responsive:** Breakpoint 768px. Sidebar collapsible on mobile (position fixed, transform for slide). Touch targets ≥48px for dump/chat inputs and buttons. globals.css uses `@media (max-width: 768px)` for mobile overrides. Desktop layout unchanged.
 
-21. **Auth:** NextAuth.js v5 (beta) with Google OAuth only. Config in `auth.ts`; route handler at `app/api/auth/[...nextauth]/route.ts`. Middleware exports `auth` from auth.ts; `authorized` callback allows `/login` and `/api/auth/*` without session, redirects all other routes to `/login` if unauthenticated. Login page at `/login` uses direct link to `/api/auth/signin/google?callbackUrl=/`. `auth.ts` sets `NEXTAUTH_URL` dynamically when unset: `https://${VERCEL_URL}` on Vercel, `http://localhost:3000` locally. Single-user system — no user IDs in DB, no per-user data isolation.
+21. **Auth:** NextAuth.js v5 (beta) with Google OAuth only. Config in `auth.ts`; route handler at `app/api/auth/[...nextauth]/route.ts`. Middleware exports `auth` from auth.ts; `authorized` callback allows `/login` and `/api/auth/*` without session, redirects all other routes to `/login` if unauthenticated. Login page at `/login` uses direct link to `/api/auth/signin/google?callbackUrl=/`. `auth.ts` sets `NEXTAUTH_URL` dynamically when unset: `https://${VERCEL_URL}` on Vercel, `http://localhost:3000` locally. **Production:** `NEXTAUTH_URL` is set explicitly in Vercel to the canonical hostname (see **Deployment**) so preview URLs do not break OAuth. Single-user system — no user IDs in DB, no per-user data isolation.
 
 22. **Vercel persistence:** App persistence now relies on Supabase Postgres (durable cloud DB), not local SQLite files.
 
-23. **Deployment documentation:** `DEPLOYMENT.md` documents required env vars, dynamic auth URL behavior, Google OAuth callback setup (local + Vercel), and Vercel deploy steps.
+23. **Deployment documentation:** This file’s **Deployment** section records the live Vercel/GitHub URLs, applied migrations, Vercel env vars, and OAuth gotchas. `DEPLOYMENT.md` remains a general guide (env vars, migrations overview, Google callback setup).
 
 24. **Journal isolation:** Journal data is browser-local only (IndexedDB). No Supabase, no `/api/*` calls, no AI/agent integration.
 
@@ -903,15 +933,17 @@ export async function register() {
 | GEMINI_API_KEY | For Gemini | Required when using Gemini models (2.0 Flash, 2.0 Pro) |
 | SUPABASE_URL | Yes | Supabase project URL (`https://...supabase.co`) |
 | SUPABASE_ANON_KEY | Yes | Supabase anon public key (used by server-side Supabase client in this project) |
+| SUPABASE_SERVICE_ROLE_KEY | Yes (prod) | Server-only; bypasses RLS for knowledge-folder admin client paths in `lib/supabase.js`. Set in Vercel; never expose to the browser. |
 | OPENAI_API_KEY | No | Unused; kept for potential future use |
 | NEXUS_BACKUP_INTERVAL_MS | No | Backup interval in ms (default 3600000 = 1 hour). Min 60000. |
 | VERCEL_URL | Auto on Vercel | Used to derive `NEXTAUTH_URL` in `auth.ts` when `NEXTAUTH_URL` is unset. |
+| NEXTAUTH_URL | Recommended (Vercel prod) | Canonical site URL for NextAuth (e.g. `https://nexus-vercel-for-real.vercel.app`). Set in Vercel so **preview** deployments do not use dynamic hosts and trigger Google **`redirect_uri_mismatch`** (see **Deployment**). |
 
 **Gemini embeddings:** Uses `GEMINI_API_KEY` against the Generative Language API `embedContent` endpoint (`gemini-embedding-001`, 768 dims).
 
 **Google OAuth:** Add redirect URIs in Google Cloud Console credentials:
 - `http://localhost:3000/api/auth/callback/google` (local)
-- `https://<your-vercel-domain>/api/auth/callback/google` (production)
+- `https://nexus-vercel-for-real.vercel.app/api/auth/callback/google` (production — current Vercel deployment)
 
 ---
 
