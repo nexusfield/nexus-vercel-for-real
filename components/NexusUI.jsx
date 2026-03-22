@@ -2313,17 +2313,26 @@ export default function NexusUI() {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <svg width={20} height={20} viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-              <circle cx="10" cy="10" r="2" fill={accent} />
-              <line x1="10" y1="4" x2="10" y2="8" stroke={accent} strokeWidth="1" />
-              <line x1="10" y1="12" x2="10" y2="16" stroke={accent} strokeWidth="1" />
-              <line x1="4" y1="10" x2="8" y2="10" stroke={accent} strokeWidth="1" />
-              <line x1="12" y1="10" x2="16" y2="10" stroke={accent} strokeWidth="1" />
-              <line x1="6" y1="6" x2="8" y2="8" stroke={accent} strokeWidth="0.8" opacity={0.7} />
-              <line x1="12" y1="12" x2="14" y2="14" stroke={accent} strokeWidth="0.8" opacity={0.7} />
-              <line x1="12" y1="6" x2="14" y2="8" stroke={accent} strokeWidth="0.8" opacity={0.7} />
-              <line x1="6" y1="12" x2="8" y2="14" stroke={accent} strokeWidth="0.8" opacity={0.7} />
-            </svg>
+            <div
+              aria-hidden
+              style={{
+                width: 40,
+                height: 36,
+                flexShrink: 0,
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                borderRadius: 6,
+              }}
+            >
+              <img
+                src="/nexus-logo.png"
+                alt=""
+                width={1376}
+                height={768}
+                style={{ height: 36, width: "auto", maxWidth: "none", display: "block" }}
+              />
+            </div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, fontFamily: "var(--font-sans)", letterSpacing: "0.08em", color: text }}>
               NEXUS
             </h1>
