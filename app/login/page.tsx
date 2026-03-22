@@ -2,7 +2,7 @@ import { signIn } from "@/auth";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center nexus-app">
+    <main className="nexus-app nexus-app-root flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-xl font-medium">Sign in to Nexus</h1>
         <form

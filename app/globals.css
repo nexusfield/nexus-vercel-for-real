@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PWA / “Add to Home Screen”: 100vh is wrong on iOS standalone; chain real viewport height */
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
 :root {
   --font-sans: "Roboto Slab", Georgia, serif;
   --nexus-bg: #0a0e14;
@@ -45,6 +51,38 @@
 .nexus-body {
   background: var(--nexus-bg);
   color: var(--nexus-text);
+  overflow-x: hidden;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+/* Fills visible viewport in browser + standalone; child NexusUI uses flex:1 min-height:0 */
+.nexus-app-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.nexus-main {
+  min-width: 0;
+}
+
+.nexus-app {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.nexus-layout {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
 }
 
 .nexus-app input::placeholder {
@@ -52,20 +90,21 @@
   opacity: 0.7;
 }
 
-/* Subtle noise texture overlay */
+/* Subtle noise texture overlay — keep behind app UI (standalone WebKit can be picky about stacking) */
 .nexus-app::before {
   content: "";
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
-  z-index: 1;
+  z-index: -1;
 }
 
 .markdown-body {
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   word-break: break-word;
   min-width: 0;
+  max-width: 100%;
 }
 .markdown-body p { margin: 0 0 8px 0; color: var(--nexus-text); }
 .markdown-body p:last-child { margin-bottom: 0; }
@@ -76,14 +115,52 @@
 .markdown-body h1 { font-size: 1.25em; }
 .markdown-body h2 { font-size: 1.1em; }
 .markdown-body h3 { font-size: 1em; }
-.markdown-body pre { margin: 8px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: auto; font-size: 15px; border: 1px solid var(--nexus-border); }
-.markdown-body code { background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 4px; font-size: 15px; color: var(--nexus-accent); }
-.markdown-body pre code { background: none; padding: 0; color: var(--nexus-text); }
+.markdown-body pre {
+  margin: 8px 0;
+  padding: 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 15px;
+  border: 1px solid var(--nexus-border);
+}
+.markdown-body code {
+  background: rgba(0,0,0,0.3);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 15px;
+  color: var(--nexus-accent);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  color: var(--nexus-text);
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: pre;
+}
 
+.markdown-body a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Tab row: inner row is width:max-content — without min-width:0 on ancestors, flex grows the whole page horizontally */
+.nexus-tab-strip {
+  min-width: 0;
+  width: 100%;
+}
 .nexus-tab-strip-scroll {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  min-width: 0;
+  max-width: 100%;
 }
 .nexus-tab-strip-scroll > div {
   display: flex;
@@ -97,6 +174,9 @@
 
 .nexus-main-content {
   max-width: 960px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 @media (min-width: 1400px) {
   .nexus-main-content {

@@ -1873,7 +1873,7 @@ export default function NexusUI() {
   }, {});
 
   return (
-    <div className="nexus-layout" style={{ display: "flex", height: "100vh", overflow: "hidden", position: "relative", zIndex: 2 }}>
+    <div className="nexus-layout" style={{ display: "flex", overflow: "hidden", position: "relative", zIndex: 2 }}>
       {/* Sidebar overlay - mobile only, closes sidebar when clicked */}
       {sidebarOpen && (
         <div
@@ -2284,13 +2284,17 @@ export default function NexusUI() {
         className="nexus-main"
         style={{
           flex: 1,
+          minWidth: 0,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
           background: bgMain,
         }}
       >
-        <div className="nexus-main-content" style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minHeight: 0 }}>
+        <div
+          className="nexus-main-content"
+          style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minWidth: 0, minHeight: 0 }}
+        >
           {/* Logo + hamburger (hamburger visible on mobile only) */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
             <button
@@ -2436,10 +2440,12 @@ export default function NexusUI() {
           {mainPanelMode === "chat" && (
             <section className="nexus-panel-enter nexus-chat-panel" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               <div
+                className="nexus-chat-messages"
                 style={{
                   flex: 1,
                   minHeight: 0,
                   minWidth: 0,
+                  overflowX: "hidden",
                   overflowY: "auto",
                   padding: "24px 0",
                   marginBottom: 12,
@@ -2464,7 +2470,7 @@ export default function NexusUI() {
                       {msg.role === "user" ? "You" : "Nexus"}
                     </strong>
                     {msg.role === "assistant" ? (
-                      <div style={{ fontSize: 16 }} className="markdown-body">
+                      <div style={{ fontSize: 16, maxWidth: "100%" }} className="markdown-body">
                         <ReactMarkdown>{String(msg.content || "")}</ReactMarkdown>
                       </div>
                     ) : (
@@ -2472,12 +2478,16 @@ export default function NexusUI() {
                         style={{
                           fontSize: 16,
                           whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
                           color: text,
                           background: "#0f0f0f",
                           padding: "10px 14px",
                           borderRadius: 12,
-                          display: "inline-block",
+                          display: "block",
+                          width: "100%",
                           maxWidth: "100%",
+                          boxSizing: "border-box",
                         }}
                       >
                         {msg.content}

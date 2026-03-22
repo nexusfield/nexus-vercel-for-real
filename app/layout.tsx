@@ -2,7 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#000000",
+  // Android Chrome PWA: resize layout when the keyboard opens instead of overlaying blindly
+  interactiveWidget: "resizes-content",
 };
 
 export const metadata: Metadata = {
