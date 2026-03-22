@@ -15,10 +15,11 @@ export const metadata: Metadata = {
     title: "NEXUS",
   },
   icons: {
-    apple: "/nexus-logo.png",
+    apple: "/icon-192.png",
     icon: [
-      { url: "/nexus-logo.png", sizes: "any", type: "image/png" },
-      { url: "/nexus-logo.png", type: "image/png" },
+      { url: "/nexus-mark.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   },
 };
