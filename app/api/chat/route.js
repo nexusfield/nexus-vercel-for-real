@@ -1,38 +1,60 @@
 import { getEnv } from "@/lib/getEnv";
+import { auth } from "@/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   try {
+    const session = await auth();
+    const userId = session?.user?.email || session?.user?.id || "";
     const body = await request.json();
-    const { userMessage, conversationHistory, model } = body;
+    const { userMessage, conversationHistory, model, activeModeInstruction } = body;
 
     if (!userMessage || typeof userMessage !== "string") {
       return Response.json({ error: "userMessage is required" }, { status: 400 });
     }
 
-    const selectedModel = model && typeof model === "string" ? model : "claude-sonnet-4-6";
-    const useGemini = selectedModel.startsWith("gemini-");
-
-    const geminiKey = getEnv("GEMINI_API_KEY");
-    if (useGemini && !geminiKey) {
-      return Response.json(
-        { error: "GEMINI_API_KEY is missing. Add it to .env.local and restart the dev server." },
-        { status: 500 }
-      );
-    }
-    if (!useGemini && !getEnv("ANTHROPIC_API_KEY")) {
+    const apiKey = getEnv("ANTHROPIC_API_KEY");
+    if (!apiKey?.trim()) {
       return Response.json(
         { error: "ANTHROPIC_API_KEY is missing. Add it to .env.local and restart the dev server." },
         { status: 500 }
       );
     }
 
+    // GEMINI_API_KEY is required for ALL chats (embedding step in navigation agent)
+    const geminiKey = getEnv("GEMINI_API_KEY");
+    if (!geminiKey?.trim()) {
+      return Response.json(
+        { error: "GEMINI_API_KEY is missing. Add it to .env.local and restart the dev server. (Required for embeddings and Gemini models.)" },
+        { status: 500 }
+      );
+    }
+
+    const selectedModel = model && typeof model === "string" ? model : "claude-sonnet-4-6";
+
     const { runNavigationAgent } = await import("@/lib/navigationAgent");
-    const { runReasoningAgent } = await import("@/lib/reasoningAgent");
     const { runChatAgent } = await import("@/lib/chatAgent");
+    const { assembleProfileBlock } = await import("@/lib/profile");
 
     const chunks = await runNavigationAgent(userMessage);
-    const contextPackage = await runReasoningAgent(chunks, conversationHistory ?? []);
-    const chatStream = await runChatAgent(userMessage, contextPackage, conversationHistory ?? [], selectedModel, geminiKey);
+    let profileBlock = "";
+    if (userId) {
+      try {
+        profileBlock = await assembleProfileBlock(userId);
+      } catch (profileErr) {
+        console.warn("[chat] Profile assembly failed:", profileErr?.message);
+      }
+    }
+    const chatStream = await runChatAgent(
+      userMessage,
+      chunks,
+      conversationHistory ?? [],
+      selectedModel,
+      geminiKey,
+      activeModeInstruction,
+      profileBlock
+    );
 
     const encoder = new TextEncoder();
 
@@ -46,9 +68,12 @@ export async function POST(request) {
           }
         } catch (err) {
           const raw = err?.message || "";
-          const friendly = /429|RESOURCE_EXHAUSTED|quota|rate.?limit/i.test(raw)
-            ? "Gemini API rate limit exceeded. Wait a minute and try again, or switch to a Claude model."
-            : raw;
+          let friendly = raw;
+          if (/429|RESOURCE_EXHAUSTED|quota|rate.?limit/i.test(raw)) {
+            friendly = "Gemini API rate limit exceeded. Wait a minute and try again, or switch to a Claude model.";
+          } else if (/credit balance|too low|Plans & Billing|invalid_request_error/i.test(raw)) {
+            friendly = "Anthropic API: Your credit balance is too low. Add credits at console.anthropic.com or switch to a Gemini model.";
+          }
           controller.enqueue(encoder.encode(`\n[Error: ${friendly}]`));
         } finally {
           controller.close();
@@ -60,23 +85,29 @@ export async function POST(request) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "X-Accel-Buffering": "no",
+        "X-Nexus-Chunks": String(chunks.length),
       },
     });
   } catch (err) {
-    let raw = err?.message || err?.cause?.message || err?.toString?.() || "Chat failed";
+    console.error("[chat] Error:", err?.message, err?.cause);
+    let raw = err?.message || err?.cause?.message || err?.error?.message || err?.toString?.() || "Chat failed";
     try {
-      const parsed = JSON.parse(raw);
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
       raw = parsed?.error?.message || parsed?.message || raw;
     } catch {}
     let msg = raw;
     if (/429|RESOURCE_EXHAUSTED|quota|rate.?limit|Too Many Requests/i.test(raw)) {
       msg = "Gemini API rate limit exceeded. Wait a minute and try again, or switch to a Claude model.";
+    } else if (/credit balance|too low|Plans & Billing|invalid_request_error/i.test(raw)) {
+      msg = "Anthropic API: Your credit balance is too low. Go to console.anthropic.com → Plans & Billing to add credits, or switch to a Gemini model.";
     } else {
-      const isOllama =
-        /ECONNREFUSED|fetch failed|Ollama|localhost:11434|connection refused/i.test(raw) ||
+      const isEmbeddingOrGemini =
+        /Gemini embedding failed|GEMINI_API_KEY|generativelanguage\.googleapis\.com|embedContent/i.test(raw) ||
         (err?.cause?.code === "ECONNREFUSED");
-      const hint = isOllama
-        ? " — Is Ollama running? Run `ollama serve` and `ollama pull nomic-embed-text`"
+      const hint = isEmbeddingOrGemini
+        ? " — Ensure GEMINI_API_KEY is set and Gemini API access is active for your project."
         : "";
       msg = raw + hint;
     }

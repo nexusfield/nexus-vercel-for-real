@@ -1,10 +1,13 @@
 const db = require("@/lib/db");
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
-    const rows = db
+    const rows = await db
       .prepare(
-        `SELECT id, structured_data, module, tags, created_at
+        `SELECT id, raw_text, structured_data, module, tags, created_at
          FROM knowledge
          ORDER BY created_at DESC`
       )
@@ -25,6 +28,7 @@ export async function GET() {
       }
       return {
         id: r.id,
+        raw_text: r.raw_text,
         structured_data,
         module: r.module,
         tags,

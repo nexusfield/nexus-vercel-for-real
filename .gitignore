@@ -31,6 +31,9 @@ yarn-error.log*
 # local database
 nexus.db
 
+# backups (periodic copies of nexus.db)
+/nexus-backups/
+
 # vercel
 .vercel
 

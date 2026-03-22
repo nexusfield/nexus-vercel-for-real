@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 const Anthropic = require("@anthropic-ai/sdk");
 const db = require("@/lib/db");
+const { getEnv } = require("@/lib/getEnv");
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: getEnv("ANTHROPIC_API_KEY"),
 });
 
 const TITLE_PROMPT = (firstMessage) =>
   `Generate a conversation title from this message. Maximum 5 words. No punctuation. No quotes. Return only the title, nothing else: ${firstMessage}`;
 
 export async function POST(request, { params }) {
-  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+  if (!getEnv("ANTHROPIC_API_KEY")?.trim()) {
     return NextResponse.json(
       {
         error:
@@ -37,7 +38,7 @@ export async function POST(request, { params }) {
     }
 
     const conversationId = parseInt(id, 10);
-    const existing = db
+    const existing = await db
       .prepare("SELECT id FROM conversations WHERE id = ?")
       .get(conversationId);
     if (!existing) {
@@ -47,19 +48,28 @@ export async function POST(request, { params }) {
       );
     }
 
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 50,
-      messages: [{ role: "user", content: TITLE_PROMPT(firstMessage) }],
-    });
+    let title;
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 50,
+        messages: [{ role: "user", content: TITLE_PROMPT(firstMessage) }],
+      });
+      const textBlock = response.content?.find((b) => b.type === "text");
+      title = (textBlock?.text || "New Chat")
+        .trim()
+        .replace(/^["']|["']$/g, "")
+        .slice(0, 100) || "New Chat";
+    } catch (anthropicErr) {
+      const errMsg = anthropicErr?.message || "";
+      if (/credit balance|too low|Plans & Billing|invalid_request_error/i.test(errMsg)) {
+        title = firstMessage.trim().split(/\s+/).slice(0, 5).join(" ") || "New Chat";
+      } else {
+        throw anthropicErr;
+      }
+    }
 
-    const textBlock = response.content?.find((b) => b.type === "text");
-    const title = (textBlock?.text || "New Chat")
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .slice(0, 100) || "New Chat";
-
-    db.prepare(
+    await db.prepare(
       "UPDATE conversations SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     ).run(title, conversationId);
 

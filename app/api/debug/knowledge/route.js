@@ -3,11 +3,11 @@ export async function GET() {
   try {
     const dbMod = await import("@/lib/db");
     const db = dbMod.default ?? dbMod;
-    const count = db.prepare("SELECT COUNT(*) as n FROM knowledge").get();
-    const withEmbedding = db.prepare(
+    const count = await db.prepare("SELECT COUNT(*) as n FROM knowledge").get();
+    const withEmbedding = await db.prepare(
       "SELECT COUNT(*) as n FROM knowledge WHERE embedding IS NOT NULL"
     ).get();
-    const sample = db
+    const sample = await db
       .prepare(
         `SELECT id, module, substr(raw_text, 1, 120) as raw_preview, length(raw_text) as len
          FROM knowledge

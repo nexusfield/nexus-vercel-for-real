@@ -9,13 +9,6 @@ const nextConfig = {
   env: {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
-  experimental: {
-    serverComponentsExternalPackages: [
-      "better-sqlite3",
-      "sqlite-vec",
-      "sqlite-vec-windows-x64",
-    ],
-  },
 };
 
 module.exports = nextConfig;

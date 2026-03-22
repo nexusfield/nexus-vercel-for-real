@@ -8,15 +8,15 @@ export async function GET(request) {
 
     let rows;
     if (q === "") {
-      rows = db
+      rows = await db
         .prepare(
-          "SELECT id, name, created_at, updated_at, messages FROM conversations ORDER BY updated_at DESC"
+          "SELECT id, name, created_at, updated_at, messages, folder_id FROM conversations ORDER BY updated_at DESC"
         )
         .all();
     } else {
-      rows = db
+      rows = await db
         .prepare(
-          `SELECT c.id, c.name, c.created_at, c.updated_at, c.messages
+          `SELECT c.id, c.name, c.created_at, c.updated_at, c.messages, c.folder_id
            FROM conversations c
            WHERE c.id IN (SELECT rowid FROM conversations_fts WHERE conversations_fts MATCH ?)
            ORDER BY c.updated_at DESC`
@@ -30,6 +30,7 @@ export async function GET(request) {
       created_at: r.created_at,
       updated_at: r.updated_at,
       messages: JSON.parse(r.messages || "[]"),
+      folder_id: r.folder_id ?? null,
     }));
 
     return NextResponse.json(conversations);
