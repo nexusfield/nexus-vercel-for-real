@@ -99,6 +99,27 @@ html {
   width: 100%;
 }
 
+/*
+ * Home-screen / standalone only (display-mode: standalone).
+ * In Safari tabs the browser chrome changes the visual viewport; in a saved PWA, WKWebView is
+ * full-screen with viewport-fit=cover — without env(safe-area-inset-*) on the root, content and
+ * touch coordinates can disagree with what you see, and fixed decorative layers behave differently.
+ */
+@media (display-mode: standalone) {
+  .nexus-body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    box-sizing: border-box;
+  }
+  /* Remove full-viewport fixed layer in PWA only (WebKit edge cases with filters + fixed + z-index) */
+  .nexus-app::before {
+    content: none;
+    display: none;
+  }
+}
+
 .nexus-app input::placeholder {
   color: var(--nexus-text-muted);
   opacity: 0.7;

@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    // Opaque bar: "black-translucent" + viewport-fit cover draws under the status area in standalone
+    // and can contribute to hit-target / focus quirks in the home-screen WebView vs in-Safari.
+    statusBarStyle: "black",
     title: "NEXUS",
   },
   icons: {
