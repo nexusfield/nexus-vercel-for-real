@@ -1,0 +1,37 @@
+---
+description: Nexus web UI — overflow, viewport-fit layout, primary nav, mobile touch/focus
+globs: components/**/*.jsx, app/globals.css, app/page.tsx
+alwaysApply: false
+---
+
+# Nexus UI layout and mobile behavior
+
+## Files
+
+- Shell and tabs: `components/NexusUI.jsx`
+- Global styles / mobile overrides: `app/globals.css`
+
+## Overflow and text
+
+- Avoid horizontal scroll on the main chat column; only code blocks (`pre`) scroll horizontally inside bubbles.
+- Use `min-width: 0` on flex children that hold long text so they shrink instead of forcing overflow.
+- Markdown / prose: `overflow-wrap: break-word` (or equivalent) so long URLs and tokens do not spill off-screen.
+
+## Chat panel
+
+- Messages area: `flex: 1`, `min-height: 0`, vertical scroll only — do not use a large fixed `min-height` on the scroll region unless there is a documented reason.
+- Prefer skipping `scrollIntoView` when `document.activeElement` is an `input` or `textarea` so mobile focus is not fighting auto-scroll.
+
+## Primary navigation (tab bar)
+
+- All main-panel tabs (Chat, Knowledge, Modes, Profile, Journal) must stay reachable on narrow widths: horizontal scroll on the tab row (`overflow-x: auto`, `flex-wrap: nowrap`, non-shrinking tab buttons). Sidebar thread list may stay behind the hamburger on mobile.
+
+## Mobile touch / keyboard
+
+- Full-viewport `fixed` layers (modals, sidebar overlay) must only be mounted when intended; verify with remote inspector if taps never reach inputs.
+- On small viewports, the off-canvas sidebar (`transform` off-screen) must not steal taps: use `pointer-events: none` when closed and `pointer-events: auto` when open (see `.nexus-sidebar` rules in `globals.css`).
+- Avoid `disabled` on the primary chat field when you still want focus/keyboard cues; prefer `readOnly` during streaming/save flows and disable **submit** instead, unless you intentionally block all interaction.
+
+## Journal editor
+
+- `react-simple-code-editor` stacks a `pre` and a positioned `textarea`. If focus fails on touch devices, ensure the textarea stacks above highlights (e.g. `z-index` on `.nexus-journal-editor-input`).

@@ -263,6 +263,8 @@ export default function NexusUI() {
   const showTypingIndicator = isViewingStreamingChat && streamingContentForActive === "";
 
   useEffect(() => {
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT")) return;
     scrollToBottom();
   }, [conversationHistory, streamingByConversation, activeConversationId]);
 
@@ -2330,7 +2332,12 @@ export default function NexusUI() {
           </div>
 
           {/* Mode Toggle */}
-          <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: `1px solid ${border}`, transition: "var(--nexus-transition)" }}>
+          <div
+            className="nexus-tab-strip"
+            style={{ marginBottom: 24, borderBottom: `1px solid ${border}`, transition: "var(--nexus-transition)" }}
+          >
+            <div className="nexus-tab-strip-scroll">
+              <div>
             <button
               type="button"
               onClick={() => setMainPanelMode("chat")}
@@ -2421,6 +2428,8 @@ export default function NexusUI() {
             >
               Journal
             </button>
+              </div>
+            </div>
           </div>
 
           {/* Chat Panel */}
@@ -2429,7 +2438,8 @@ export default function NexusUI() {
               <div
                 style={{
                   flex: 1,
-                  minHeight: 360,
+                  minHeight: 0,
+                  minWidth: 0,
                   overflowY: "auto",
                   padding: "24px 0",
                   marginBottom: 12,
@@ -2447,6 +2457,7 @@ export default function NexusUI() {
                     style={{
                       marginBottom: 20,
                       padding: 0,
+                      minWidth: 0,
                     }}
                   >
                     <strong style={{ fontSize: 16, color: textMuted, display: "block", marginBottom: 6 }}>
@@ -2637,7 +2648,7 @@ export default function NexusUI() {
                   }}
                   onKeyDown={handleChatInputKeyDown}
                   placeholder="Ask a question..."
-                  disabled={activeStreamIds.has(activeConversationId) || chatSaveActive}
+                  readOnly={activeStreamIds.has(activeConversationId) || chatSaveActive}
                   rows={1}
                   style={{
                     flex: 1,
