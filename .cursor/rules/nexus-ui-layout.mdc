@@ -25,11 +25,13 @@ alwaysApply: false
 ## Primary navigation (tab bar)
 
 - All main-panel tabs (Chat, Knowledge, Modes, Profile, Journal) must stay reachable on narrow widths: horizontal scroll on the tab row (`overflow-x: auto`, `flex-wrap: nowrap`, non-shrinking tab buttons). Sidebar thread list may stay behind the hamburger on mobile.
+- Wrap the **logo row + tab strip** in **`.nexus-main-chrome`** (`position: sticky; top: 0`) so that chrome stays visible when the page or a parent scrolls; panel bodies scroll below it.
 
 ## Mobile touch / keyboard
 
 - Full-viewport `fixed` layers (modals, sidebar overlay) must only be mounted when intended; verify with remote inspector if taps never reach inputs.
-- On small viewports, the off-canvas sidebar (`transform` off-screen) must not steal taps: use `pointer-events: none` when closed and `pointer-events: auto` when open (see `.nexus-sidebar` rules in `globals.css`).
+- On small viewports, the off-canvas sidebar (`transform` off-screen) must not steal taps: `pointer-events: none` when closed; **also** keep closed sidebar **`z-index: 0`** and **`.nexus-main` `z-index: 2`** so standalone WebViews deliver taps to the main panel (not a stale fixed layer). Open sidebar uses **`z-index: 100`**.
+- Mobile: apply **`font-size: 16px`** and **`touch-action: manipulation`** to **all** `.nexus-main` / `.nexus-sidebar` inputs and textareas (not only chat/dump classes).
 - Avoid `disabled` on the primary chat field when you still want focus/keyboard cues; prefer `readOnly` during streaming/save flows and disable **submit** instead, unless you intentionally block all interaction.
 
 ## Journal editor

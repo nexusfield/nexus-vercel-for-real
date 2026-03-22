@@ -71,6 +71,20 @@ html {
 
 .nexus-main {
   min-width: 0;
+  position: relative;
+  /* Above mobile off-canvas sidebar when closed (z-index 0) so taps hit inputs, not a stale fixed layer */
+  z-index: 2;
+}
+
+/* Logo + tab bar stay visible when the window or a parent scrolls */
+.nexus-main-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  flex-shrink: 0;
+  background: var(--nexus-bg-elevated);
+  margin: -24px -24px 0 -24px;
+  padding: 24px 24px 0;
 }
 
 .nexus-app {
@@ -329,7 +343,8 @@ html {
     bottom: 0;
     width: 250px;
     max-width: 85vw;
-    z-index: 100;
+    /* Closed: stay under .nexus-main (z-index 2) so WebViews send taps to the panel */
+    z-index: 0;
     transform: translateX(-100%);
     transition: transform 200ms ease;
     box-shadow: 4px 0 24px rgba(0,0,0,0.3);
@@ -337,6 +352,7 @@ html {
   .nexus-sidebar.nexus-sidebar-open {
     transform: translateX(0);
     pointer-events: auto;
+    z-index: 100;
   }
   .nexus-sidebar:not(.nexus-sidebar-open) {
     pointer-events: none;
@@ -389,5 +405,18 @@ html {
     min-height: 48px !important;
     min-width: 48px !important;
     padding: 14px 20px !important;
+  }
+
+  /* All main-panel fields: 16px avoids iOS zoom/focus quirks; manipulation reduces double-tap delay */
+  .nexus-main input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  .nexus-main textarea,
+  .nexus-main select {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+  .nexus-sidebar input[type="text"],
+  .nexus-sidebar textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
   }
 }

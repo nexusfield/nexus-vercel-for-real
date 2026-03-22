@@ -2295,8 +2295,9 @@ export default function NexusUI() {
           className="nexus-main-content"
           style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minWidth: 0, minHeight: 0 }}
         >
+          <div className="nexus-main-chrome">
           {/* Logo + hamburger (hamburger visible on mobile only) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <button
               type="button"
               className="nexus-sidebar-toggle"
@@ -2434,6 +2435,7 @@ export default function NexusUI() {
             </button>
               </div>
             </div>
+          </div>
           </div>
 
           {/* Chat Panel */}
@@ -2733,7 +2735,7 @@ export default function NexusUI() {
                       resizeTextarea(dumpInputRef, 120);
                     }}
                     placeholder="Paste or type text to dump..."
-                    disabled={dumpLoading || !!dumpContextQuestion || !!dumpSimilarRecord}
+                    readOnly={dumpLoading || !!dumpContextQuestion || !!dumpSimilarRecord}
                     rows={1}
                     style={{
                       flex: 1,
