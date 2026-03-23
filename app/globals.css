@@ -8,11 +8,6 @@
 html {
   height: 100%;
 }
-@media (display-mode: standalone) {
-  html {
-    height: -webkit-fill-available;
-  }
-}
 
 :root {
   --font-sans: "Roboto Slab", Georgia, serif;
@@ -110,23 +105,43 @@ html {
 }
 
 /*
- * Home-screen / standalone only (display-mode: standalone).
- * In Safari tabs the browser chrome changes the visual viewport; in a saved PWA, WKWebView is
- * full-screen with viewport-fit=cover — without env(safe-area-inset-*) on the root, content and
- * touch coordinates can disagree with what you see, and fixed decorative layers behave differently.
+ * Standalone PWA: keep the same shell model as web and apply safe-area only to UI edges.
+ * This avoids body-level offsets that can change touch/scroll behavior in WKWebView.
  */
-@media (display-mode: standalone) {
-  .nexus-body {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
-    box-sizing: border-box;
+@media (display-mode: standalone) and (max-width: 768px) {
+  html {
+    height: -webkit-fill-available;
   }
-  /* Remove full-viewport fixed layer in PWA only (WebKit edge cases with filters + fixed + z-index) */
+
+  .nexus-body {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+  }
+
+  .nexus-main-chrome {
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    padding-left: calc(24px + env(safe-area-inset-left, 0px));
+    padding-right: calc(24px + env(safe-area-inset-right, 0px));
+  }
+
+  .nexus-chat-footer {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
+
+  /* Remove fixed decorative layer in standalone WebKit to avoid compositing oddities. */
   .nexus-app::before {
     content: none;
     display: none;
+  }
+
+  .nexus-sidebar {
+    top: env(safe-area-inset-top, 0px);
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .nexus-chat-form {
+    padding-bottom: 0;
   }
 }
 
@@ -247,7 +262,7 @@ html {
   flex-shrink: 0;
   position: relative;
   z-index: 6;
-  background: var(--nexus-bg);
+  background: transparent;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -442,14 +457,6 @@ html {
     justify-content: center;
     min-width: 44px;
     min-height: 44px;
-  }
-}
-
-@media (display-mode: standalone) {
-  .nexus-body {
-    height: -webkit-fill-available;
-    min-height: -webkit-fill-available;
-    max-height: -webkit-fill-available;
   }
 }
 

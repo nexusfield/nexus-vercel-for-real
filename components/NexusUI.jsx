@@ -2598,7 +2598,7 @@ export default function NexusUI() {
                     fontFamily: "var(--font-sans)",
                     border: `1px solid ${border}`,
                     borderRadius: 4,
-                    background: "rgba(0,0,0,0.2)",
+                    background: bgMain,
                     color: textMuted,
                     cursor: "pointer",
                     display: "flex",
@@ -2674,7 +2674,7 @@ export default function NexusUI() {
                     border: `1px solid ${border}`,
                     borderRadius: 4,
                     fontSize: 16,
-                    background: "rgba(0,0,0,0.2)",
+                    background: bgMain,
                     color: text,
                     resize: "none",
                     overflowY: "auto",
@@ -2690,8 +2690,8 @@ export default function NexusUI() {
                     padding: "10px 14px",
                     border: `1px solid ${activeStreamIds.has(activeConversationId) || !chatInput.trim() || chatSaveActive ? border : accent}`,
                     borderRadius: 4,
-                    background: activeStreamIds.has(activeConversationId) || !chatInput.trim() || chatSaveActive ? "transparent" : accent,
-                    color: activeStreamIds.has(activeConversationId) || !chatInput.trim() || chatSaveActive ? textMuted : bgSidebar,
+                    background: bgMain,
+                    color: activeStreamIds.has(activeConversationId) || !chatInput.trim() || chatSaveActive ? textMuted : accent,
                     cursor: activeStreamIds.has(activeConversationId) || chatSaveActive ? "not-allowed" : "pointer",
                     transition: "var(--nexus-transition)",
                     display: "flex",
@@ -2700,13 +2700,13 @@ export default function NexusUI() {
                   }}
                   onMouseEnter={(e) => {
                     if (!activeStreamIds.has(activeConversationId) && !chatSaveActive && chatInput.trim()) {
-                      e.currentTarget.style.background = "#00f5c4";
+                      e.currentTarget.style.background = "rgba(0,212,170,0.12)";
                       e.currentTarget.style.borderColor = "#00f5c4";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!activeStreamIds.has(activeConversationId) && !chatSaveActive && chatInput.trim()) {
-                      e.currentTarget.style.background = accent;
+                      e.currentTarget.style.background = bgMain;
                       e.currentTarget.style.borderColor = accent;
                     }
                   }}
