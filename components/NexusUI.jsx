@@ -1873,7 +1873,7 @@ export default function NexusUI() {
   }, {});
 
   return (
-    <div className="nexus-layout" style={{ display: "flex", overflow: "hidden", position: "relative", zIndex: 2 }}>
+    <div className="nexus-layout" style={{ display: "flex", overflow: "hidden", position: "relative", zIndex: 2, height: "100%" }}>
       {/* Sidebar overlay - mobile only, closes sidebar when clicked */}
       {sidebarOpen && (
         <div
@@ -1895,6 +1895,7 @@ export default function NexusUI() {
       <aside
         className={`nexus-sidebar ${sidebarOpen ? "nexus-sidebar-open" : ""}`}
         style={{
+          height: "100%",
           width: 250,
           flexShrink: 0,
           background: bgSidebar,
@@ -2283,6 +2284,7 @@ export default function NexusUI() {
       <main
         className="nexus-main"
         style={{
+          height: "100%",
           flex: 1,
           minWidth: 0,
           minHeight: 0,
@@ -2294,7 +2296,7 @@ export default function NexusUI() {
       >
         <div
           className={`nexus-main-content${mainPanelMode === "chat" ? " nexus-main-content-chat" : ""}`}
-          style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minWidth: 0, minHeight: 0 }}
+          style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minWidth: 0, minHeight: 0, height: "100%" }}
         >
           <div className="nexus-main-chrome">
           {/* Logo + hamburger (hamburger visible on mobile only) */}
