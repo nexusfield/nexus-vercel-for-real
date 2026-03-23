@@ -4,10 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PWA / “Add to Home Screen”: 100vh is wrong on iOS standalone; chain real viewport height */
+/* Desktop: stable height chain. Standalone WebKit: fill-available avoids 100vh bugs. */
 html {
   height: 100%;
-  height: -webkit-fill-available;
+}
+@media (display-mode: standalone) {
+  html {
+    height: -webkit-fill-available;
+  }
 }
 
 :root {
@@ -71,12 +75,14 @@ html {
 
 .nexus-main {
   min-width: 0;
+  /* Required with flex:1 or the column grows to content height and the whole page scrolls */
+  min-height: 0;
   position: relative;
   /* Above mobile off-canvas sidebar when closed (z-index 0) so taps hit inputs, not a stale fixed layer */
   z-index: 2;
 }
 
-/* Logo + tab bar stay visible when the window or a parent scrolls */
+/* Logo + tabs: persistent chrome across surfaces while panel content scrolls below. */
 .nexus-main-chrome {
   position: sticky;
   top: 0;
@@ -97,6 +103,15 @@ html {
   min-width: 0;
   min-height: 0;
   width: 100%;
+}
+
+/* Keep the app shell viewport-locked so chat/side panels own scrolling, not the document. */
+.nexus-body {
+  overflow-y: hidden;
+}
+
+.nexus-layout {
+  height: 100%;
 }
 
 /*
@@ -212,6 +227,49 @@ html {
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Chat scroll ownership: keep page/chrome stable, scroll only the messages list. */
+.nexus-main-content.nexus-main-content-chat {
+  overflow: hidden;
+}
+
+.nexus-chat-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.nexus-chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.nexus-chat-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  background: var(--nexus-bg);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 769px) {
+  .nexus-layout {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .nexus-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+  }
+
+  .nexus-main {
+    height: 100dvh;
+  }
 }
 @media (min-width: 1400px) {
   .nexus-main-content {
@@ -353,6 +411,15 @@ html {
   .nexus-sidebar-close,
   .nexus-sidebar-toggle {
     display: none !important;
+  }
+
+  /* Desktop chat: keep composer close to messages without affecting mobile/PWA input layout. */
+  .nexus-chat-messages {
+    margin-bottom: 0 !important;
+  }
+
+  .nexus-main-content.nexus-main-content-chat {
+    padding-bottom: 12px !important;
   }
 }
 

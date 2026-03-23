@@ -2285,6 +2285,7 @@ export default function NexusUI() {
         style={{
           flex: 1,
           minWidth: 0,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -2292,7 +2293,7 @@ export default function NexusUI() {
         }}
       >
         <div
-          className="nexus-main-content"
+          className={`nexus-main-content${mainPanelMode === "chat" ? " nexus-main-content-chat" : ""}`}
           style={{ margin: "0 auto", padding: 24, flex: 1, display: "flex", flexDirection: "column", width: "100%", minWidth: 0, minHeight: 0 }}
         >
           <div className="nexus-main-chrome">
@@ -2517,6 +2518,7 @@ export default function NexusUI() {
                 <div ref={messagesEndRef} />
               </div>
 
+              <div className="nexus-chat-footer" style={{ flexShrink: 0 }}>
               {chatSaveQuestion && (
                 <div style={{ marginBottom: 12 }}>
                   <ConfirmationPanel
@@ -2717,6 +2719,7 @@ export default function NexusUI() {
                   )}
                 </button>
               </form>
+              </div>
             </section>
           )}
 
