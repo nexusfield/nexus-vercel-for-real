@@ -121,6 +121,42 @@ function parseSavePayload(fullContent) {
   return { synthesis, question, markerAtStart: markerIndex === 0 };
 }
 
+async function copyTextToClipboard(text) {
+  const value = String(text ?? "");
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {}
+  }
+
+  if (typeof document === "undefined" || !document.body) return false;
+
+  let textarea = null;
+  try {
+    textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "0";
+    textarea.style.left = "-9999px";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    if (textarea && textarea.parentNode) {
+      textarea.parentNode.removeChild(textarea);
+    }
+  }
+}
+
 export default function NexusUI() {
   const [dumpInput, setDumpInput] = useState("");
   const [dumpConfirmation, setDumpConfirmation] = useState("");
@@ -146,6 +182,7 @@ export default function NexusUI() {
   const messagesEndRef = useRef(null);
   const searchDebounceRef = useRef(null);
   const initialLoadDoneRef = useRef(false);
+  const activeConversationIdRef = useRef(null);
 
   const [mainPanelMode, setMainPanelMode] = useState("chat");
   const [knowledgeFilter, setKnowledgeFilter] = useState("all");
@@ -190,6 +227,8 @@ export default function NexusUI() {
   const [chatSavePendingText, setChatSavePendingText] = useState(null);
   const [chatSaveSimilarRecord, setChatSaveSimilarRecord] = useState(null);
   const [chatSavePendingTextToSubmit, setChatSavePendingTextToSubmit] = useState(null);
+  const [copiedMessageKey, setCopiedMessageKey] = useState(null);
+  const copiedResetTimeoutRef = useRef(null);
 
   function cancelDumpSaveFlow() {
     setDumpContextQuestion(null);
@@ -226,6 +265,14 @@ export default function NexusUI() {
   }, [draggedConvId]);
 
   useEffect(() => {
+    return () => {
+      if (copiedResetTimeoutRef.current) {
+        clearTimeout(copiedResetTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     function handleClickOutside(e) {
       if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
         setModelDropdownOpen(false);
@@ -254,6 +301,22 @@ export default function NexusUI() {
     el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
   };
 
+  const handleCopyAssistantMessage = async (messageContent, messageKey) => {
+    const didCopy = await copyTextToClipboard(String(messageContent || ""));
+    if (!didCopy) {
+      alert("Unable to copy this message. Please try again.");
+      return;
+    }
+
+    setCopiedMessageKey(messageKey);
+    if (copiedResetTimeoutRef.current) {
+      clearTimeout(copiedResetTimeoutRef.current);
+    }
+    copiedResetTimeoutRef.current = setTimeout(() => {
+      setCopiedMessageKey((current) => (current === messageKey ? null : current));
+    }, 1800);
+  };
+
   const isViewingStreamingChat = activeConversationId != null && activeStreamIds.has(activeConversationId);
   const streamingContentForActive = isViewingStreamingChat ? (streamingByConversation[activeConversationId] ?? "") : "";
   const displayMessages =
@@ -261,6 +324,10 @@ export default function NexusUI() {
       ? [...conversationHistory, { role: "assistant", content: streamingContentForActive }]
       : conversationHistory;
   const showTypingIndicator = isViewingStreamingChat && streamingContentForActive === "";
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   useEffect(() => {
     const ae = document.activeElement;
@@ -401,6 +468,7 @@ export default function NexusUI() {
   }
 
   function loadConversation(conv) {
+    activeConversationIdRef.current = conv.id;
     setActiveConversationId(conv.id);
     const messages = activeStreamIds.has(conv.id)
       ? (inProgressMessages[conv.id] ?? conv.messages ?? [])
@@ -410,6 +478,7 @@ export default function NexusUI() {
   }
 
   function handleNewChat() {
+    activeConversationIdRef.current = null;
     setActiveConversationId(null);
     setConversationHistory([]);
     setActiveMode(null);
@@ -1354,6 +1423,7 @@ export default function NexusUI() {
           throw new Error("Invalid response: no conversation id returned");
         }
         currentConversationId = createData.id;
+        activeConversationIdRef.current = currentConversationId;
         setActiveConversationId(currentConversationId);
         setSearchQuery("");
         const list = await fetchConversations();
@@ -1446,7 +1516,8 @@ export default function NexusUI() {
         setConversations((prev) =>
           prev.map((c) => (c.id === currentConversationId ? { ...c, messages: updatedMessages } : c))
         );
-        if (activeConversationId === currentConversationId) {
+        const shouldCommitSaveToVisible = activeConversationIdRef.current === currentConversationId;
+        if (shouldCommitSaveToVisible) {
           setConversationHistory(updatedMessages);
         }
         setStreamingContent("");
@@ -1490,7 +1561,8 @@ export default function NexusUI() {
       setConversations((prev) =>
         prev.map((c) => (c.id === currentConversationId ? { ...c, messages: updatedMessages } : c))
       );
-      if (activeConversationId === currentConversationId) {
+      const shouldCommitCompleteToVisible = activeConversationIdRef.current === currentConversationId;
+      if (shouldCommitCompleteToVisible) {
         setConversationHistory(updatedMessages);
       }
       setStreamingContent("");
@@ -1561,7 +1633,8 @@ export default function NexusUI() {
       setConversations((prev) =>
         prev.map((c) => (c.id === currentConversationId ? { ...c, messages: errorMessages } : c))
       );
-      if (activeConversationId === currentConversationId) {
+      const shouldCommitErrorToVisible = activeConversationIdRef.current === currentConversationId;
+      if (shouldCommitErrorToVisible) {
         setConversationHistory(errorMessages);
       }
       setStreamingContent("");
@@ -2462,44 +2535,62 @@ export default function NexusUI() {
                     No messages yet. Ask a question.
                   </p>
                 )}
-                {displayMessages.map((msg, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      marginBottom: 20,
-                      padding: 0,
-                      minWidth: 0,
-                    }}
-                  >
-                    <strong style={{ fontSize: 16, color: textMuted, display: "block", marginBottom: 6 }}>
-                      {msg.role === "user" ? "You" : "Nexus"}
-                    </strong>
-                    {msg.role === "assistant" ? (
-                      <div style={{ fontSize: 16, maxWidth: "100%" }} className="markdown-body">
-                        <ReactMarkdown>{String(msg.content || "")}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          fontSize: 16,
-                          whiteSpace: "pre-wrap",
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                          color: text,
-                          background: "#0f0f0f",
-                          padding: "10px 14px",
-                          borderRadius: 12,
-                          display: "block",
-                          width: "100%",
-                          maxWidth: "100%",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {msg.content}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {displayMessages.map((msg, i) => {
+                  const messageCopyKey = msg.id ?? `${msg.role}-${i}`;
+                  const showCopiedState = copiedMessageKey === messageCopyKey;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        marginBottom: 20,
+                        padding: 0,
+                        minWidth: 0,
+                      }}
+                    >
+                      {msg.role === "assistant" ? (
+                        <div className="nexus-message-header">
+                          <strong className="nexus-message-label">Nexus</strong>
+                          <button
+                            type="button"
+                            aria-label="Copy assistant message"
+                            className={`nexus-copy-btn${showCopiedState ? " is-copied" : ""}`}
+                            onClick={() => handleCopyAssistantMessage(msg.content, messageCopyKey)}
+                          >
+                            {showCopiedState ? "Copied" : "Copy"}
+                          </button>
+                        </div>
+                      ) : (
+                        <strong style={{ fontSize: 16, color: textMuted, display: "block", marginBottom: 6 }}>
+                          You
+                        </strong>
+                      )}
+                      {msg.role === "assistant" ? (
+                        <div style={{ fontSize: 16, maxWidth: "100%" }} className="markdown-body">
+                          <ReactMarkdown>{String(msg.content || "")}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            fontSize: 16,
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
+                            color: text,
+                            background: "#0f0f0f",
+                            padding: "10px 14px",
+                            borderRadius: 12,
+                            display: "block",
+                            width: "100%",
+                            maxWidth: "100%",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          {msg.content}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 {showTypingIndicator && (
                   <div
                     style={{

@@ -200,6 +200,52 @@ html {
   word-break: break-word;
 }
 
+.nexus-message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.nexus-message-label {
+  font-size: 16px;
+  color: var(--nexus-text-muted);
+  display: block;
+  margin: 0;
+}
+
+.nexus-copy-btn {
+  border: 1px solid var(--nexus-border);
+  border-radius: 999px;
+  background: rgba(20, 24, 31, 0.75);
+  color: var(--nexus-text-muted);
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  min-height: 36px;
+  min-width: 68px;
+  transition: color var(--nexus-transition), border-color var(--nexus-transition), background var(--nexus-transition);
+}
+
+.nexus-copy-btn:hover {
+  color: var(--nexus-text);
+  border-color: var(--nexus-text-muted);
+}
+
+.nexus-copy-btn:focus-visible {
+  outline: 2px solid var(--nexus-accent);
+  outline-offset: 2px;
+}
+
+.nexus-copy-btn.is-copied {
+  color: var(--nexus-accent);
+  border-color: var(--nexus-accent);
+  background: rgba(0, 212, 170, 0.1);
+}
+
 /* Tab row: inner row is width:max-content — without min-width:0 on ancestors, flex grows the whole page horizontally */
 .nexus-tab-strip {
   min-width: 0;
@@ -416,6 +462,13 @@ html {
 }
 
 @media (max-width: 768px) {
+  .nexus-copy-btn {
+    min-height: 44px;
+    min-width: 76px;
+    padding: 10px 14px;
+    touch-action: manipulation;
+  }
+
   .nexus-sidebar {
     position: fixed !important;
     top: 0;

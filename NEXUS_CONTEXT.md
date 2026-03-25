@@ -20,6 +20,38 @@
 
 ---
 
+## Cross-Platform Requirement (Critical)
+
+**Every feature change (UI or backend) must be treated as multi-platform by default.**
+
+Nexus runs in at least three materially different runtimes:
+
+1. Desktop/laptop web browser
+2. Mobile browser tab (Safari/Chrome)
+3. Installed mobile PWA (`display-mode: standalone`, especially iOS WKWebView)
+
+### Non-negotiable process
+
+- Do **not** assume behavior parity across these runtimes.
+- Any feature work is incomplete until validated against all relevant runtimes.
+- Prefer isolated overrides instead of shared global hacks:
+  - Keep baseline behavior in shared web rules.
+  - Scope platform-specific behavior with explicit media/runtime boundaries (for example standalone + mobile).
+- Preserve a single layout contract:
+  - clearly define which container owns scrolling,
+  - avoid overlapping scroll/sticky/fixed ownership,
+  - avoid mixing body-level viewport tricks unless absolutely necessary.
+
+### Required verification checklist for UI-impacting changes
+
+- Desktop web: layout stability, scroll ownership, input/focus behavior
+- Mobile browser tab: same checks + keyboard interaction
+- Installed PWA: same checks + safe-area and hit-testing behavior
+
+If one target is broken while another is fixed, the change is not complete and must not be treated as done.
+
+---
+
 ## Deployment
 
 **Production (Vercel)**
